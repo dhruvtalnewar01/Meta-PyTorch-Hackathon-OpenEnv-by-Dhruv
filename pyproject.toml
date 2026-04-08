@@ -37,7 +37,7 @@ dev = [
 ]
 
 [project.scripts]
-server = "cloud_devops_env.server.app:main"
+server = "server.app:main"
 
 [tool.setuptools.packages.find]
-include = ["cloud_devops_env*"]
+include = ["server*", "models", "graders", "client"]
