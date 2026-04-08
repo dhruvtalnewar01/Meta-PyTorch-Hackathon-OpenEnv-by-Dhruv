@@ -40,6 +40,7 @@ class CloudDevOpsEnvironment(Environment):
         self._services_stopped: set = set()
         self._fixes_applied: set = set()
         self._current_task: str = self.DEFAULT_TASK
+        self._running_reward_sum: float = 0.0
         self._total_reward: float = 0.0
         self._task_progress: float = 0.0
 
@@ -57,6 +58,7 @@ class CloudDevOpsEnvironment(Environment):
         self._failed_command_counts = {}
         self._services_stopped = set()
         self._fixes_applied = set()
+        self._running_reward_sum = 0.0
         self._total_reward = 0.0
         self._task_progress = 0.0
 
@@ -125,9 +127,13 @@ class CloudDevOpsEnvironment(Environment):
         penalty += cmd_result.get("penalty", 0.0)
         message = cmd_result["message"]
         
-        # Update totals
-        self._total_reward += step_reward + penalty
-        self._total_reward = float(max(0.01, min(0.99, round(self._total_reward, 3))))  # clamp strictly to (0.0, 1.0)
+        # Calculate bounded reward to ensure sum over episode is exactly in [0.01, 0.99]
+        raw_new_sum = self._running_reward_sum + step_reward + penalty
+        clamped_new_sum = float(max(0.01, min(0.99, round(raw_new_sum, 3))))
+        actual_step_reward = clamped_new_sum - self._running_reward_sum
+        
+        self._running_reward_sum = clamped_new_sum
+        self._total_reward = self._running_reward_sum
         self._state.total_reward = self._total_reward
         
         # Calculate progress
@@ -146,7 +152,7 @@ class CloudDevOpsEnvironment(Environment):
 
         return CloudObservation(
             done=done,
-            reward=step_reward + penalty,
+            reward=actual_step_reward,
             current_alerts=self._get_current_alerts(),
             terminal_output=terminal_output,
             system_health={name: self._scenario["services"][name]["health"] for name in self._scenario["services"]},
@@ -695,14 +701,18 @@ class CloudDevOpsEnvironment(Environment):
 
     def _make_done_observation(self, terminal_output: str, message: str, penalty: float = 0.0) -> CloudObservation:
         """Create a terminal observation (episode end)."""
-        self._total_reward += penalty
-        self._total_reward = float(max(0.01, min(0.99, round(self._total_reward, 3))))
+        raw_new_sum = self._running_reward_sum + penalty
+        clamped_new_sum = float(max(0.01, min(0.99, round(raw_new_sum, 3))))
+        actual_step_reward = clamped_new_sum - self._running_reward_sum
+        
+        self._running_reward_sum = clamped_new_sum
+        self._total_reward = self._running_reward_sum
         self._state.total_reward = self._total_reward
         
         return CloudObservation(
             done=True,
-            reward=penalty,
-            current_alerts=["INCIDENT RESPONSE TERMINATED"],
+            reward=actual_step_reward,
+            current_alerts=self._get_current_alerts() + ["INCIDENT RESPONSE TERMINATED"],
             terminal_output=terminal_output,
             system_health={name: self._scenario["services"][name]["health"] for name in self._scenario["services"]},
             available_services=list(self._scenario["services"].keys()),
