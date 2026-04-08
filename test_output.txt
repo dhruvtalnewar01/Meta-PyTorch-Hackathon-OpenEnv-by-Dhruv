@@ -1,0 +1,44 @@
+≡ƒöº CloudDevOps-Env Smoke Test
+============================================================
+============================================================
+TASK 1: Identify Service Failure (Easy)
+============================================================
+  Reset OK | Alerts: 3 | Services: 5
+  Step 1: query_logs user-service | reward=0.3 | progress=33%
+  Step 2: run_diagnostic user-service | reward=0.4 | progress=67%
+  Step 3: restart_service user-service | reward=0.3 | done=True
+  GRADER SCORE: 1.0
+  Γ£à Task 1 PASSED (score=1.0)
+
+============================================================
+TASK 2: Diagnose Memory Leak (Medium)
+============================================================
+  Reset OK | Alerts: 4
+  Step 1: check_metrics payment-service | reward=0.2
+  Step 2: run_diagnostic payment-service | reward=0.3
+  Step 3: apply_fix payment-service | reward=0.2
+  Step 4: verify_health | reward=0.3 | done=True
+  GRADER SCORE: 1.0
+  Γ£à Task 2 PASSED (score=1.0)
+
+============================================================
+TASK 3: Database Rollback Under Pressure (Hard)
+============================================================
+  Reset OK | Alerts: 6
+  Step 1: query_logs database | reward=0.15
+  Step 2: stop_service order-service | reward=0.0
+  Step 3: stop_service payment-service | reward=0.15
+  Step 4: rollback_migration | reward=0.3
+  Step 5: start_service order-service | reward=0.0
+  Step 6: start_service payment-service | reward=0.2
+  Step 7: verify_health | reward=0.2 | done=True
+  GRADER SCORE: 1.0
+  Γ£à Task 3 PASSED (score=1.0)
+
+============================================================
+ALL TESTS PASSED Γ£à
+  Easy:   1.00
+  Medium: 1.00
+  Hard:   1.00
+  Avg:    1.00
+============================================================

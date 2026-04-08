@@ -1,0 +1,14 @@
+# CloudDevOps-Env
+*.pyc
+__pycache__/
+*.pyo
+.env
+.env.local
+outputs/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.vscode/
+.idea/

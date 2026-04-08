@@ -1,0 +1,96 @@
+# CloudDevOps-Env: OpenEnv Manifest
+spec_version: 1
+name: cloud_devops_env
+description: >
+  SRE Incident Debugging Environment — simulates real-world cloud infrastructure
+  incidents that an AI agent must diagnose and resolve. Covers service failures,
+  memory leaks, and database rollbacks with deterministic grading.
+type: environment
+version: "1.0.0"
+author: "CloudDevOps Team"
+tags:
+  - openenv
+  - sre
+  - devops
+  - incident-response
+  - real-world
+
+runtime:
+  framework: fastapi
+  port: 7860
+  dockerfile: server/Dockerfile
+
+app:
+  entrypoint: server.app:app
+
+tasks:
+  - name: identify_service_failure
+    difficulty: easy
+    description: >
+      A web service is returning HTTP 500 errors. Find the failing service,
+      diagnose the root cause, and restart it.
+    max_steps: 10
+    max_reward: 1.0
+    grader: graders.IdentifyServiceFailureGrader
+
+  - name: diagnose_memory_leak
+    difficulty: medium
+    description: >
+      A microservice is experiencing a gradual memory leak causing periodic OOM kills.
+      Find the leak source, identify the problematic component, and apply the fix.
+    max_steps: 15
+    max_reward: 1.0
+    grader: graders.DiagnoseMemoryLeakGrader
+
+  - name: database_rollback
+    difficulty: hard
+    description: >
+      A bad database migration has corrupted critical data. Find the problematic
+      migration, safely stop dependent services, execute a rollback, and verify
+      data integrity — all while the system continues to degrade.
+    max_steps: 20
+    max_reward: 1.0
+    grader: graders.DatabaseRollbackGrader
+
+action_space:
+  type: CloudAction
+  fields:
+    command:
+      type: enum
+      values:
+        - query_logs
+        - check_metrics
+        - restart_service
+        - scale_service
+        - kill_process
+        - rollback_migration
+        - stop_service
+        - start_service
+        - run_diagnostic
+        - apply_fix
+        - verify_health
+        - wait
+    target:
+      type: string
+      description: Target service, process, or migration ID
+    args:
+      type: dict
+      description: Additional arguments for the command
+
+observation_space:
+  type: CloudObservation
+  fields:
+    current_alerts:
+      type: list[string]
+    terminal_output:
+      type: string
+    system_health:
+      type: dict
+    available_services:
+      type: list[string]
+    message:
+      type: string
+    step_number:
+      type: integer
+    task_progress:
+      type: float
