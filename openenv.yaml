@@ -1,0 +1,32 @@
+version: "1.0"
+name: "CloudDevOps-Env"
+description: "Simulates an SRE debugging server incidents and deploying fixes."
+
+observation_space:
+  type: object
+  properties:
+    current_alerts: { type: array, items: { type: string } }
+    terminal_output: { type: string }
+    system_health: { type: object }
+    available_services: { type: array, items: { type: string } }
+    message: { type: string }
+    step_number: { type: integer }
+    task_progress: { type: number }
+
+action_space:
+  type: object
+  properties:
+    command: { type: string }
+    target: { type: string }
+    args: { type: object }
+
+tasks:
+  - id: "identify_service_failure"
+    description: "Identify which server is returning 500 errors."
+    difficulty: "easy"
+  - id: "diagnose_memory_leak"
+    description: "Find the memory leak and restart the daemon."
+    difficulty: "medium"
+  - id: "database_rollback"
+    description: "Revert the corrupted database migration."
+    difficulty: "hard"
