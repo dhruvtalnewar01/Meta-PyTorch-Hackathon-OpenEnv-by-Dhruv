@@ -1,7 +1,10 @@
 """
 CloudDevOps-Env: Task Graders
 Deterministic graders for 3 tasks. Each grader analyzes the trajectory
-of actions and final system state, returning a score in [0.0, 1.0].
+of actions and final system state, returning a score in (0.0, 1.0).
+
+Note: Scores are strictly bounded to the open interval (0, 1) as
+required by the OpenEnv evaluation specification.
 """
 
 from typing import List, Dict, Any
@@ -99,7 +102,7 @@ class IdentifyServiceFailureGrader(BaseGrader):
                 penalties -= 0.10
                 break
         
-        final_score = max(0.0, min(1.0, score + penalties))
+        final_score = max(0.01, min(0.99, score + penalties))
         return round(final_score, 2)
 
 
@@ -172,7 +175,7 @@ class DiagnoseMemoryLeakGrader(BaseGrader):
         if verified_fix:
             score += 0.30
         
-        final_score = max(0.0, min(1.0, score + penalties))
+        final_score = max(0.01, min(0.99, score + penalties))
         return round(final_score, 2)
 
 
@@ -264,7 +267,7 @@ class DatabaseRollbackGrader(BaseGrader):
         if started_before_rollback:
             penalties -= 0.05
         
-        final_score = max(0.0, min(1.0, score + penalties))
+        final_score = max(0.01, min(0.99, score + penalties))
         return round(final_score, 2)
 
 
@@ -289,7 +292,7 @@ def grade_task(task_name: str, trajectory: List[Dict[str, Any]], final_state: Di
         final_state: Final environment state dict
     
     Returns:
-        Score between 0.0 and 1.0
+        Score strictly between 0.0 and 1.0 (exclusive)
     """
     if task_name not in GRADERS:
         raise ValueError(f"Unknown task: {task_name}. Available: {list(GRADERS.keys())}")

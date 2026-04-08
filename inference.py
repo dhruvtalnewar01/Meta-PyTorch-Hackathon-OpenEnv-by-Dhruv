@@ -290,7 +290,7 @@ def run_task_local(task_config: Dict[str, Any], client_llm: OpenAI) -> Dict[str,
         # Calculate final score
         max_total_reward = 1.0  # All tasks have max reward of 1.0
         score = sum(rewards) / max_total_reward if max_total_reward > 0 else 0.0
-        score = min(max(score, 0.0), 1.0)  # clamp to [0, 1]
+        score = min(max(score, 0.01), 0.99)  # strictly clamp to (0, 1) per Phase 2 rules
         success = score >= SUCCESS_SCORE_THRESHOLD
         
     except Exception as e:
