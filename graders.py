@@ -4,10 +4,21 @@ Deterministic graders for 3 tasks. Each grader analyzes the trajectory
 of actions and final system state, returning a score in (0.0, 1.0).
 
 Note: Scores are strictly bounded to the open interval (0, 1) as
-required by the OpenEnv evaluation specification.
+required by the OpenEnv evaluation specification. No score may ever
+be exactly 0.0 or exactly 1.0.
 """
 
 from typing import List, Dict, Any
+
+
+def _clamp_score(raw: float) -> float:
+    """Clamp score to strict open interval (0, 1).
+    
+    The OpenEnv Phase 2 validator rejects scores of exactly 0.0 or 1.0.
+    This helper ensures compliance by clamping to [0.01, 0.99] and
+    rounding to 3 decimal places to kill floating-point micro-fractions.
+    """
+    return float(max(0.01, min(0.99, round(raw, 3))))
 
 
 class BaseGrader:
@@ -26,7 +37,7 @@ class BaseGrader:
             final_state: The final CloudState as a dict
         
         Returns:
-            Score between 0.0 and 1.0
+            Score strictly between 0.0 and 1.0 (exclusive)
         """
         raise NotImplementedError
 
@@ -35,10 +46,10 @@ class IdentifyServiceFailureGrader(BaseGrader):
     """
     EASY — Grader for Task 1: Identify Service Failure
     
-    Scoring:
-    - 0.30: Identified the failing service (user-service)
-    - 0.40: Diagnosed root cause (OOM / Java heap)
-    - 0.30: Restarted the correct service
+    Scoring (max ~0.95):
+    - 0.28: Identified the failing service (user-service)
+    - 0.38: Diagnosed root cause (OOM / Java heap)
+    - 0.29: Restarted the correct service
     
     Penalties:
     - -0.05 per unnecessary restart of a healthy service
@@ -85,13 +96,13 @@ class IdentifyServiceFailureGrader(BaseGrader):
             elif cmd == "restart_service" and target != self.TARGET_SERVICE:
                 unnecessary_restarts += 1
         
-        # Calculate score
+        # Calculate score — sums to 0.95 max
         if identified_service:
-            score += 0.30
+            score += 0.28
         if diagnosed_cause:
-            score += 0.40
+            score += 0.38
         if restarted_service:
-            score += 0.30
+            score += 0.29
         
         # Apply penalties
         penalties -= unnecessary_restarts * 0.05
@@ -102,19 +113,18 @@ class IdentifyServiceFailureGrader(BaseGrader):
                 penalties -= 0.10
                 break
         
-        final_score = max(0.01, min(0.99, score + penalties))
-        return round(final_score, 2)
+        return _clamp_score(score + penalties)
 
 
 class DiagnoseMemoryLeakGrader(BaseGrader):
     """
     MEDIUM — Grader for Task 2: Diagnose Memory Leak
     
-    Scoring:
-    - 0.20: Identified the leaking service (payment-service)
-    - 0.30: Found the leak source (session cache / no TTL)
-    - 0.20: Applied the fix (clear cache, set TTL)
-    - 0.30: Verified the fix (health check passed)
+    Scoring (max ~0.93):
+    - 0.18: Identified the leaking service (payment-service)
+    - 0.28: Found the leak source (session cache / no TTL)
+    - 0.19: Applied the fix (clear cache, set TTL)
+    - 0.28: Verified the fix (health check passed)
     
     Penalties:
     - -0.05 per unnecessary service kill
@@ -166,29 +176,29 @@ class DiagnoseMemoryLeakGrader(BaseGrader):
             if cmd == "restart_service" and not found_leak_source:
                 penalties -= 0.05
         
+        # Calculate score — sums to 0.93 max
         if identified_service:
-            score += 0.20
+            score += 0.18
         if found_leak_source:
-            score += 0.30
+            score += 0.28
         if applied_fix:
-            score += 0.20
+            score += 0.19
         if verified_fix:
-            score += 0.30
+            score += 0.28
         
-        final_score = max(0.01, min(0.99, score + penalties))
-        return round(final_score, 2)
+        return _clamp_score(score + penalties)
 
 
 class DatabaseRollbackGrader(BaseGrader):
     """
     HARD — Grader for Task 3: Database Rollback Under Pressure
     
-    Scoring:
-    - 0.15: Found the bad migration (v2.8.0_add_payment_fields)
-    - 0.15: Stopped dependent services (order-service, payment-service)
-    - 0.30: Executed the rollback successfully
-    - 0.20: Restarted services after rollback
-    - 0.20: Verified system health
+    Scoring (max ~0.94):
+    - 0.14: Found the bad migration (v2.8.0_add_payment_fields)
+    - 0.14: Stopped dependent services (order-service, payment-service)
+    - 0.28: Executed the rollback successfully
+    - 0.19: Restarted services after rollback
+    - 0.19: Verified system health
     
     Penalties:
     - -0.10 for attempting rollback without stopping services
@@ -250,16 +260,17 @@ class DatabaseRollbackGrader(BaseGrader):
                     if "resolved" in output or "healthy" in output or "operational" in output:
                         health_verified = True
         
+        # Calculate score — sums to 0.94 max
         if found_migration:
-            score += 0.15
+            score += 0.14
         if self.SERVICES_TO_STOP.issubset(stopped_services):
-            score += 0.15
+            score += 0.14
         if rollback_executed:
-            score += 0.30
+            score += 0.28
         if self.SERVICES_TO_STOP.issubset(services_restarted) and rollback_executed:
-            score += 0.20
+            score += 0.19
         if health_verified:
-            score += 0.20
+            score += 0.19
         
         # Penalties
         if rollback_before_stop:
@@ -267,8 +278,7 @@ class DatabaseRollbackGrader(BaseGrader):
         if started_before_rollback:
             penalties -= 0.05
         
-        final_score = max(0.01, min(0.99, score + penalties))
-        return round(final_score, 2)
+        return _clamp_score(score + penalties)
 
 
 # ============================================================================

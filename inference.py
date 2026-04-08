@@ -217,7 +217,7 @@ def run_task_local(task_config: Dict[str, Any], client_llm: OpenAI) -> Dict[str,
     rewards: List[float] = []
     trajectory: List[Dict[str, Any]] = []
     steps_taken = 0
-    score = 0.0
+    score = 0.01  # never exactly 0.0
     success = False
     
     log_start(task=task_name, env=BENCHMARK, model=MODEL_NAME)
@@ -288,13 +288,16 @@ def run_task_local(task_config: Dict[str, Any], client_llm: OpenAI) -> Dict[str,
                 break
         
         # Calculate final score
-        max_total_reward = 1.0  # All tasks have max reward of 1.0
-        score = sum(rewards) / max_total_reward if max_total_reward > 0 else 0.0
-        score = min(max(score, 0.01), 0.99)  # strictly clamp to (0, 1) per Phase 2 rules
+        max_total_reward = 1.0
+        score = sum(rewards) / max_total_reward if max_total_reward > 0 else 0.01
         success = score >= SUCCESS_SCORE_THRESHOLD
         
     except Exception as e:
         print(f"[DEBUG] Task error: {e}", flush=True)
+    
+    # CRITICAL: Clamp score OUTSIDE try/except so it ALWAYS runs
+    # OpenEnv Phase 2 requires scores strictly in (0, 1) — never 0.0 or 1.0
+    score = float(max(0.01, min(0.99, round(score, 3))))
     
     log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
     

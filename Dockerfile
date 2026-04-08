@@ -1,4 +1,5 @@
 FROM python:3.11-slim
+LABEL version="2.1.0" description="CloudDevOps-Env OpenEnv SRE Simulator"
 
 # Create non-root user (HF Spaces requires UID 1000)
 RUN useradd -m -u 1000 user

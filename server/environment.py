@@ -127,7 +127,7 @@ class CloudDevOpsEnvironment(Environment):
         
         # Update totals
         self._total_reward += step_reward + penalty
-        self._total_reward = max(0.0, min(1.0, self._total_reward))  # clamp
+        self._total_reward = float(max(0.01, min(0.99, round(self._total_reward, 3))))  # clamp strictly to (0.0, 1.0)
         self._state.total_reward = self._total_reward
         
         # Calculate progress
@@ -213,17 +213,17 @@ class CloudDevOpsEnvironment(Environment):
         if self._current_task == "identify_service_failure":
             if target == solution["target_service"] and not solution["checkpoints"]["identified_failing_service"]:
                 solution["checkpoints"]["identified_failing_service"] = True
-                reward = 0.3
+                reward = 0.28
                 log_output += "\n\n[INSIGHT] This service appears to be the source of the problem."
         elif self._current_task == "diagnose_memory_leak":
             if target == solution["target_service"] and not solution["checkpoints"]["identified_leaking_service"]:
                 solution["checkpoints"]["identified_leaking_service"] = True
-                reward = 0.2
+                reward = 0.18
                 log_output += "\n\n[INSIGHT] Memory leak pattern detected in this service."
         elif self._current_task == "database_rollback":
             if target == "database" and not solution["checkpoints"]["found_bad_migration"]:
                 solution["checkpoints"]["found_bad_migration"] = True
-                reward = 0.15
+                reward = 0.14
                 log_output += "\n\n[INSIGHT] Bad migration identified in the logs."
         
         return {
@@ -259,10 +259,10 @@ class CloudDevOpsEnvironment(Environment):
         if self._current_task == "diagnose_memory_leak":
             if target == solution["target_service"] and not solution["checkpoints"]["identified_leaking_service"]:
                 solution["checkpoints"]["identified_leaking_service"] = True
-                reward = 0.2
+                reward = 0.18
             elif target == "cache-service" and solution["checkpoints"]["identified_leaking_service"] and not solution["checkpoints"]["found_leak_source"]:
                 solution["checkpoints"]["found_leak_source"] = True
-                reward = 0.3
+                reward = 0.28
         
         return {
             "output": output,
@@ -292,7 +292,7 @@ class CloudDevOpsEnvironment(Environment):
                         solution["checkpoints"]["restarted_service"] = True
                         self._scenario["services"][target]["status"] = "running"
                         self._scenario["services"][target]["health"] = "healthy"
-                        reward = 0.3
+                        reward = 0.29
                         return {
                             "output": f"Service '{target}' restarted successfully.\n[OK] Service is now healthy and accepting requests.",
                             "reward": reward,
@@ -345,17 +345,17 @@ class CloudDevOpsEnvironment(Environment):
         if self._current_task == "identify_service_failure":
             if target == solution["target_service"] and not solution["checkpoints"]["diagnosed_root_cause"]:
                 solution["checkpoints"]["diagnosed_root_cause"] = True
-                reward = 0.4
+                reward = 0.38
                 output += "\n\n[ROOT CAUSE IDENTIFIED] OOM - Java heap space exhaustion during batch sync."
         elif self._current_task == "diagnose_memory_leak":
             if target == solution["target_service"] and not solution["checkpoints"]["found_leak_source"]:
                 solution["checkpoints"]["found_leak_source"] = True
-                reward = 0.3
+                reward = 0.28
                 output += "\n\n[LEAK SOURCE IDENTIFIED] Session cache storing objects without TTL."
         elif self._current_task == "database_rollback":
             if target == "database" and not solution["checkpoints"]["found_bad_migration"]:
                 solution["checkpoints"]["found_bad_migration"] = True
-                reward = 0.15
+                reward = 0.14
                 output += "\n\n[BAD MIGRATION IDENTIFIED] v2.8.0_add_payment_fields"
         
         return {
@@ -388,7 +388,7 @@ class CloudDevOpsEnvironment(Environment):
                 if services_to_stop.issubset(self._services_stopped):
                     if not solution["checkpoints"]["stopped_dependent_services"]:
                         solution["checkpoints"]["stopped_dependent_services"] = True
-                        reward = 0.15
+                        reward = 0.14
                         return {
                             "output": f"Service '{target}' stopped.\n[OK] All dependent services are now stopped. Safe to proceed with rollback.",
                             "reward": reward,
@@ -437,7 +437,7 @@ class CloudDevOpsEnvironment(Environment):
                     still_stopped = services_to_restart.intersection(self._services_stopped)
                     if not still_stopped and not solution["checkpoints"]["restarted_services"]:
                         solution["checkpoints"]["restarted_services"] = True
-                        reward = 0.20
+                        reward = 0.19
                         return {
                             "output": f"Service '{target}' started.\n[OK] All dependent services restarted successfully.",
                             "reward": reward,
@@ -502,7 +502,7 @@ class CloudDevOpsEnvironment(Environment):
             self._scenario["services"]["database"]["cpu"] = "35%"
             return {
                 "output": f"=== MIGRATION ROLLBACK ===\nRolling back: {target}\nExecuting: ALTER TABLE orders DROP COLUMN payment_method_id;\nExecuting: ALTER TABLE orders DROP COLUMN payment_processor;\n[OK] Migration {target} rolled back successfully.\n[OK] Data integrity restored for 450,000 order records.\n[OK] Database health: HEALTHY",
-                "reward": 0.30,
+                "reward": 0.28,
                 "message": "Database migration rolled back successfully!",
             }
         else:
@@ -555,7 +555,7 @@ class CloudDevOpsEnvironment(Environment):
                     self._scenario["services"]["payment-service"]["cpu"] = "15%"
                     return {
                         "output": f"=== FIX APPLIED ===\nTarget: {target}\nAction: Applied TTL to session cache entries, cleared stale sessions.\n[OK] 120,000 stale session entries purged.\n[OK] Memory usage dropped from 1800MB to 350MB.\n[OK] Redis connection pool: 50/500 connections.\n[OK] Service health: HEALTHY",
-                        "reward": 0.2,
+                        "reward": 0.19,
                         "message": "Fix applied successfully! Memory leak resolved.",
                     }
             return {
@@ -581,7 +581,7 @@ class CloudDevOpsEnvironment(Environment):
                     solution["checkpoints"]["verified_fix"] = True
                     return {
                         "output": "=== HEALTH VERIFICATION ===\nAll services: HEALTHY\npayment-service: Memory stable at 350MB, no growth detected.\nCache: 5,000 entries with proper TTL.\nError rate: 0%\n[OK] Incident resolved. All systems operational.",
-                        "reward": 0.3,
+                        "reward": 0.28,
                         "message": "Health verified. Incident fully resolved!",
                     }
                 return {
@@ -600,7 +600,7 @@ class CloudDevOpsEnvironment(Environment):
                     solution["checkpoints"]["verified_health"] = True
                     return {
                         "output": "=== HEALTH VERIFICATION ===\nDatabase: HEALTHY - No integrity errors\norder-service: HEALTHY - Processing orders\npayment-service: HEALTHY - Processing payments\nError rate: 0%\n[OK] All systems operational. Incident resolved.",
-                        "reward": 0.20,
+                        "reward": 0.19,
                         "message": "Health verified. Incident fully resolved!",
                     }
                 return {
@@ -696,7 +696,7 @@ class CloudDevOpsEnvironment(Environment):
     def _make_done_observation(self, terminal_output: str, message: str, penalty: float = 0.0) -> CloudObservation:
         """Create a terminal observation (episode end)."""
         self._total_reward += penalty
-        self._total_reward = max(0.0, min(1.0, self._total_reward))
+        self._total_reward = float(max(0.01, min(0.99, round(self._total_reward, 3))))
         self._state.total_reward = self._total_reward
         
         return CloudObservation(

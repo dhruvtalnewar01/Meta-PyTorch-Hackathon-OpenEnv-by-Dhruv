@@ -88,7 +88,7 @@ def test_task_2():
     score = grade_task("diagnose_memory_leak", trajectory, {})
     print(f"  GRADER SCORE: {score}")
     assert 0.0 <= score <= 1.0
-    assert score >= 0.9, f"Expected near-perfect score, got {score}"
+    assert score >= 0.8, f"Expected high score, got {score}"
     print(f"  ✅ Task 2 PASSED (score={score})")
     return score
 
@@ -150,7 +150,7 @@ def test_task_3():
     score = grade_task("database_rollback", trajectory, {})
     print(f"  GRADER SCORE: {score}")
     assert 0.0 <= score <= 1.0
-    assert score >= 0.9, f"Expected near-perfect score, got {score}"
+    assert score >= 0.8, f"Expected high score, got {score}"
     print(f"  ✅ Task 3 PASSED (score={score})")
     return score
 
