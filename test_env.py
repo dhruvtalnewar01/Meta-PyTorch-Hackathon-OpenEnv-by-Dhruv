@@ -4,12 +4,10 @@ import os
 
 # Add paths
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "cloud_devops_env"))
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "cloud_devops_env", "server"))
 
-from cloud_devops_env.models import CloudAction, CommandType
-from cloud_devops_env.server.environment import CloudDevOpsEnvironment
-from cloud_devops_env.graders import grade_task
+from models import CloudAction, CommandType
+from server.environment import CloudDevOpsEnvironment
+from graders import grade_task
 
 def test_task_1():
     """Test Easy task: Identify Service Failure"""

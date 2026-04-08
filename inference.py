@@ -205,11 +205,9 @@ def run_task_local(task_config: Dict[str, Any], client_llm: OpenAI) -> Dict[str,
     """Run a single task using local environment (no Docker/HTTP needed)."""
     # Import environment directly for local execution
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "cloud_devops_env"))
-    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "cloud_devops_env", "server"))
     
-    from cloud_devops_env.server.environment import CloudDevOpsEnvironment
-    from cloud_devops_env.models import CloudAction, CommandType
+    from server.environment import CloudDevOpsEnvironment
+    from models import CloudAction, CommandType
     
     task_name = task_config["name"]
     max_steps = task_config["max_steps"]
